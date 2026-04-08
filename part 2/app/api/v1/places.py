@@ -1,0 +1,147 @@
+from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt # <--- ADDED get_jwt
+from app.services import facade
+
+api = Namespace('places', description='Place operations')
+
+# Define the models for related entities
+amenity_model = api.model('PlaceAmenity', {
+    'id': fields.String(description='Amenity ID'),
+    'name': fields.String(description='Name of the amenity')
+})
+
+user_model = api.model('PlaceUser', {
+    'id': fields.String(description='User ID'),
+    'first_name': fields.String(description='First name of the owner'),
+    'last_name': fields.String(description='Last name of the owner'),
+    'email': fields.String(description='Email of the owner')
+})
+
+# ADDED: The review model specifically for places
+review_model = api.model('PlaceReview', {
+    'id': fields.String(description='Review ID'),
+    'text': fields.String(description='Text of the review'),
+    'rating': fields.Integer(description='Rating of the place (1-5)'),
+    'user_id': fields.String(description='ID of the user')
+})
+
+# UPDATED: place_model now includes the reviews list
+place_model = api.model('Place', {
+    'id': fields.String(description='Place ID'),
+    'title': fields.String(required=True, description='Title of the place'),
+    'description': fields.String(description='Description of the place'),
+    'price': fields.Float(required=True, description='Price per night'),
+    'latitude': fields.Float(required=True, description='Latitude of the place'),
+    'longitude': fields.Float(required=True, description='Longitude of the place'),
+    'owner_id': fields.String(required=True, description='ID of the owner'),
+    'amenities': fields.List(fields.String, required=True, description="List of amenities ID's"),
+    'reviews': fields.List(fields.Nested(review_model), description='List of reviews')
+})
+
+@api.route('/')
+class PlaceList(Resource):
+    @api.expect(place_model)
+    @api.marshal_with(place_model, code=201)
+    @api.response(201, 'Place successfully created')
+    @api.response(400, 'Invalid input data')
+    @jwt_required()
+    def post(self):
+        """Register a new place"""
+        current_user_id = get_jwt_identity() # Read the wristband
+        
+        place_data = api.payload
+        # Overwrite whatever the user typed to enforce that the logged-in user is the owner
+        place_data['owner_id'] = current_user_id 
+        
+        try:
+            new_place = facade.create_place(place_data)
+        except ValueError as e:
+            api.abort(400, str(e))
+
+        return new_place, 201
+
+    @api.marshal_list_with(place_model)
+    @api.response(200, 'List of places retrieved successfully')
+    def get(self):
+        """Retrieve a list of all places"""
+        all_places = facade.get_all_places()
+        return all_places, 200
+
+@api.route('/<place_id>')
+class PlaceResource(Resource):
+    
+    # --- The Awesome GET (Public) ---
+    @api.response(200, 'Place details retrieved successfully')
+    @api.response(404, 'Place not found')
+    def get(self, place_id):
+        """Get place details by ID (including amenities and reviews)"""
+        place = facade.get_place(place_id)
+        if not place:
+            return {'message': 'Place not found'}, 404
+
+        amenities_list = [{'id': amenity.id, 'name': amenity.name} for amenity in place.amenities]
+        
+        # Fetch the reviews to include in the response
+        reviews = facade.get_reviews_by_place(place_id)
+        reviews_list = [{'id': r.id, 'text': r.text, 'rating': r.rating, 'user_id': r.user.id} for r in reviews]
+
+        return {
+            'id': place.id,
+            'title': place.title,
+            'description': place.description,
+            'latitude': place.latitude,
+            'longitude': place.longitude,
+            'owner': {
+                'id': place.owner.id,
+                'first_name': place.owner.first_name,
+                'last_name': place.owner.last_name,
+                'email': place.owner.email
+            },
+            'amenities': amenities_list,
+            'reviews': reviews_list
+        }, 200
+
+    # --- The Secure PUT (Protected by the Bouncer) ---
+    @api.expect(place_model)
+    @api.response(200, 'Place updated successfully')
+    @api.response(403, 'Unauthorized action')
+    @api.response(404, 'Place not found')
+    @api.response(400, 'Invalid input data')
+    @jwt_required()
+    def put(self, place_id):
+        """Update a place's information"""
+        current_user_id = get_jwt_identity()
+        
+        # 1. Look at the back of the wristband for the VIP Badge!
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
+        place = facade.get_place(place_id) # 2. Pull the House Deed
+        if not place:
+            api.abort(404, 'Place not found')
+            
+        # 3. THE AUTHORIZATION CHECK: Are you an admin? If not, do the IDs match?
+        if not is_admin and place.owner.id != current_user_id: 
+            return {'error': 'Unauthorized action'}, 403
+
+        # 4. If we made it past the Bouncer, update the place
+        place_data = api.payload
+        updated_place = facade.update_place(place_id, place_data)
+        
+        if not updated_place:
+            return {'message': 'Place not found during update'}, 404
+            
+        return {'message': 'Place updated successfully'}, 200
+
+# FIXED: Moved out of PlaceResource so the route registers properly
+@api.route('/<place_id>/reviews')
+class PlaceReviewList(Resource):
+    @api.response(200, 'List of reviews for the place retrieved successfully')
+    @api.response(404, 'Place not found')
+    def get(self, place_id):
+        """Get all reviews for a specific place"""
+        place = facade.get_place(place_id)
+        if not place:
+            return {'message': 'Place not found'}, 404
+        reviews = facade.get_reviews_by_place(place_id)
+        return [{'id': r.id, 'text': r.text, 'rating': r.rating} for r in reviews], 200
