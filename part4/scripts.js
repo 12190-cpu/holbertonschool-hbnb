@@ -68,6 +68,22 @@ async function fetchPlaces() {
     }
 }
 
+function getPlaceImage(title) {
+    if (title === 'Parc des Princes') {
+        return 'images/parc.png';
+    }
+    if (title === 'Santiago Bernabeu') {
+        return 'images/bernabeu.png';
+    }
+    if (title === 'La Bombonera') {
+        return 'images/bombonera.png';
+    }
+    if (title === 'Westfalenstadion') {
+        return 'images/westfalen.png';
+    }
+    return 'images/logo.png';
+}
+
 // 3. Draw the HTML dynamically
 function displayPlaces(places) {
     const placesList = document.getElementById('places-list');
@@ -78,9 +94,11 @@ function displayPlaces(places) {
         placeCard.className = 'place-card';
         
         // Notice the href! We pass the ID in the URL so the next page knows what to load
-        placeCard.innerHTML = `
+        placeCard.innerHTML = ` 
+            <img src="${getPlaceImage(place.title)}" alt="${place.title}" class="place-image">
             <h3>${place.title}</h3>
-            <p>Price: ${place.price} Credits/Night</p>
+            <p>${place.description}</p>
+            <p>Price: ${place.price} €/night</p>
             <a href="place.html?id=${place.id}" class="details-button">View Details</a>
         `;
         

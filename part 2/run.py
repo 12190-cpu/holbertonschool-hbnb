@@ -20,19 +20,46 @@ with app.app_context():
         db.session.add(user)
         db.session.commit()    
 
-    if not Place.query.first():
         user = User.query.filter_by(email="admin@test.com").first()
 
-        place = Place(
+        if not Place.query.first():
+            places = [
+        Place(
             title="Parc des Princes",
             description="Beautiful stadium in Paris",
-            price=100,
+            price=600,
             latitude=48.841436,
             longitude=2.253049,
             owner_id=user.id
+        ),
+        Place(
+            title="Santiago Bernabeu",
+            description="Iconic arena in Madrid",
+            price=750,
+            latitude=40.453054,
+            longitude=-3.688344,
+            owner_id=user.id
+        ),
+        Place(
+            title="Westfalenstadion",
+            description="Beautiful stadium in Dortmund",
+            price=500,
+            latitude=51.492811,
+            longitude=7.451828,
+            owner_id=user.id
+        ),
+        Place(
+            title="La Bombonera",
+            description="Historic arena in Buenos Aires",
+            price=300,
+            latitude=-34.635147,
+            longitude=-58.364586,
+            owner_id=user.id
         )
+        ]
 
-        db.session.add(place)
+
+        db.session.add_all(places)
         db.session.commit()
 
 if __name__ == "__main__":
