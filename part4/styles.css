@@ -99,6 +99,64 @@ main {
     margin-top: 1rem;
 }
 
+.place-details {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.place-details .place-card {
+    margin: 0;
+    padding: 20px;
+}
+
+.place-details h2 {
+    margin-bottom: 15px;
+    color: #0a2a66;
+}
+
+.place-info {
+    margin-bottom: 20px;
+    line-height: 1.7;
+}
+
+.place-info p {
+    margin-bottom: 10px;
+}
+
+.place-section {
+    margin-top: 25px;
+}
+
+.place-section h3 {
+    margin-bottom: 12px;
+    color: #0a2a66;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 6px;
+}
+
+.amenities-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.amenities-list li {
+    background: #f4f7fb;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+}
+
+.review-card {
+    background: #f9f9f9;
+    color: #222;
+    margin: 10px 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
 footer {
     text-align: center;
     padding: 2rem;

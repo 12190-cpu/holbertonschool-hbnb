@@ -83,12 +83,22 @@ class PlaceResource(Resource):
         
         # Fetch the reviews to include in the response
         reviews = facade.get_reviews_by_place(place_id)
-        reviews_list = [{'id': r.id, 'text': r.text, 'rating': r.rating, 'user_id': r.user.id} for r in reviews]
-
+        reviews_list = [
+        {
+        'id': r.id,
+        'text': r.text,
+        'rating': r.rating,
+        'user_id': r.user.id,
+        'user_name': f"{r.user.first_name} {r.user.last_name}"
+        }
+        for r in reviews
+]
+        
         return {
             'id': place.id,
             'title': place.title,
             'description': place.description,
+            'price': place.price,
             'latitude': place.latitude,
             'longitude': place.longitude,
             'owner': {
