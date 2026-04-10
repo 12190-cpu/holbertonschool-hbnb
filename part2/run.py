@@ -147,10 +147,10 @@ with app.app_context():
         bombonera = Place.query.filter_by(title="La Bombonera").first()
         westfalen = Place.query.filter_by(title="Westfalenstadion").first()
 
-        parc.amenities.extend([parking, vip, food])
-        bernabeu.amenities.extend([parking, museum, vip])
-        bombonera.amenities.extend([food, museum])
-        westfalen.amenities.extend([parking, food])
+        parc.amenities.extend([parking, vip, food, museum])
+        bernabeu.amenities.extend([parking, museum, vip, food])
+        bombonera.amenities.extend([food, museum, parking])
+        westfalen.amenities.extend([parking, food, museum])
 
         db.session.commit()
 
