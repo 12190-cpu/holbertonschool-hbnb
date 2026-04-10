@@ -3,6 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const placesList = document.getElementById('places-list');
     const placeDetails = document.getElementById('place-details');
     const reviewForm = document.getElementById('review-form');
+    const priceFilter = document.getElementById('price-filter');
+
+    if (priceFilter) {
+        priceFilter.addEventListener('change', () => {
+            fetchPlaces(); // recharge les données avec filtre
+        });
+    }
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
@@ -81,6 +88,17 @@ function getPlaceImage(title) {
     return 'images/logo.png';
 }
 
+function getAmenityIcon(name) {
+    const icons = {
+        'Parking': 'images/parking.png',
+        'Food Court': 'images/food.png',
+        'VIP Lounge': 'images/vip.png',
+        'Museum': 'images/museum.png',
+    };
+
+    return icons[name] || 'images/default.png';
+};
+
 async function fetchPlaces() {
     const token = getCookie('token');
 
@@ -106,14 +124,21 @@ async function fetchPlaces() {
 
 function displayPlaces(places) {
     const placesList = document.getElementById('places-list');
+    const maxPrice = document.getElementById('price-filter').value;
+
     placesList.innerHTML = '';
 
-    if (!places || places.length === 0) {
-        placesList.innerHTML = '<p>No places available.</p>';
+    const filteredPlaces = places.filter(place => {
+        if (maxPrice === 'all') return true;
+        return place.price <= parseInt(maxPrice);
+    });
+
+    if (filteredPlaces.length === 0) {
+        placesList.innerHTML = '<p>No places found.</p>';
         return;
     }
 
-    places.forEach(place => {
+    filteredPlaces.forEach(place => {
         const placeCard = document.createElement('article');
         placeCard.className = 'place-card';
 
@@ -172,7 +197,12 @@ if (place.amenities && place.amenities.length > 0) {
                     amenity?.id ||
                     amenity;
 
-                return `<li>${label ? label : 'Unknown amenity'}</li>`;
+return `
+    <li>
+        <img src="${getAmenityIcon(label)}" class="amenity-icon">
+        ${label}
+    </li>
+`;
             }).join('')}
         </ul>
     `;
